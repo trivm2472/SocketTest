@@ -16,18 +16,21 @@ io.on("connection", socket => {
 
     socket.on('joinRoom', ({username, room}) => {
         const user = userJoin(socket.id, username, room);
+        socket.join(user.room);
         socket.emit("message", formatMessage("Admin Bot", "Welcome to the chat"));
 
-        socket.broadcast.emit("message", formatMessage("Admin Bot", "A user has join the chat"));
+        socket.broadcast.to(user.room).emit("message", formatMessage("Admin Bot", `${user.username} has join the chat`));
     })
     
+    socket.on('chatMessage', message => {
+        const user = getCurrentUser(socket.id);
+        io.to(user.room).emit('message', formatMessage(`${user.username}`, message))
+    });
+
     socket.on("disconnect", () => {
         io.emit("message", formatMessage("Admin Bot", "A user has left the chat room"));
     });
 
-    socket.on('chatMessage', message => {
-        io.emit('message', formatMessage("USER", message))
-    });
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
